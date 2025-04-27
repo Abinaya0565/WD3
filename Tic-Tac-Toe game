@@ -1,0 +1,131 @@
+document.addEventListener('DOMContentLoaded', () => {
+    const board = document.getElementById('board');
+    const cells = document.querySelectorAll('.cell');
+    const status = document.getElementById('status');
+    const resetButton = document.getElementById('reset');
+    const aiToggle = document.getElementById('ai-toggle');
+    
+    let gameState = ['', '', '', '', '', '', '', '', ''];
+    let currentPlayer = 'X';
+    let gameActive = true;
+    let vsAI = false;
+    
+    const winningConditions = [
+        [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
+        [0, 3, 6], [1, 4, 7], [2, 5, 8], // columns
+        [0, 4, 8], [2, 4, 6]             // diagonals
+    ];
+    
+    // Initialize the game
+    function initGame() {
+        gameState = ['', '', '', '', '', '', '', '', ''];
+        currentPlayer = 'X';
+        gameActive = true;
+        status.textContent = `Player ${currentPlayer}'s turn`;
+        
+        cells.forEach(cell => {
+            cell.textContent = '';
+            cell.classList.remove('x', 'o');
+        });
+    }
+    
+    // Handle cell click
+    function handleCellClick(e) {
+        const clickedCell = e.target;
+        const clickedCellIndex = parseInt(clickedCell.getAttribute('data-index'));
+        
+        // If cell already filled or game not active, ignore click
+        if (gameState[clickedCellIndex] !== '' || !gameActive) return;
+        
+        // Make the move for human player
+        makeMove(clickedCell, clickedCellIndex, currentPlayer);
+        
+        // Check for win or draw
+        checkResult();
+        
+        // If playing against AI and game is still active, make AI move
+        if (vsAI && gameActive && currentPlayer === 'O') {
+            setTimeout(makeAIMove, 500);
+        }
+    }
+    
+    // Make a move on the board
+    function makeMove(cell, index, player) {
+        gameState[index] = player;
+        cell.textContent = player;
+        cell.classList.add(player.toLowerCase());
+    }
+    
+    // Check game result (win/draw)
+    function checkResult() {
+        let roundWon = false;
+        
+        // Check all winning conditions
+        for (let i = 0; i < winningConditions.length; i++) {
+            const [a, b, c] = winningConditions[i];
+            
+            if (gameState[a] === '' || gameState[b] === '' || gameState[c] === '') {
+                continue;
+            }
+            
+            if (gameState[a] === gameState[b] && gameState[b] === gameState[c]) {
+                roundWon = true;
+                break;
+            }
+        }
+        
+        // If won, end game
+        if (roundWon) {
+            status.textContent = `Player ${currentPlayer} wins!`;
+            gameActive = false;
+            return;
+        }
+        
+        // If no win and no empty cells left, it's a draw
+        if (!gameState.includes('')) {
+            status.textContent = 'Game ended in a draw!';
+            gameActive = false;
+            return;
+        }
+        
+        // Switch player if game continues
+        currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+        status.textContent = `Player ${currentPlayer}'s turn`;
+    }
+    
+    // AI move logic (simple implementation)
+    function makeAIMove() {
+        if (!gameActive) return;
+        
+        // Simple AI: find first empty cell
+        // For better AI, you could implement minimax algorithm
+        let availableCells = [];
+        gameState.forEach((cell, index) => {
+            if (cell === '') availableCells.push(index);
+        });
+        
+        if (availableCells.length > 0) {
+            // Choose random available cell
+            const randomIndex = Math.floor(Math.random() * availableCells.length);
+            const aiChoice = availableCells[randomIndex];
+            
+            makeMove(cells[aiChoice], aiChoice, currentPlayer);
+            checkResult();
+        }
+    }
+    
+    // Event listeners
+    cells.forEach(cell => {
+        cell.addEventListener('click', handleCellClick);
+    });
+    
+    resetButton.addEventListener('click', initGame);
+    
+    aiToggle.addEventListener('change', (e) => {
+        vsAI = e.target.checked;
+        initGame();
+    });
+    
+    // Initialize the game
+    initGame();
+});
